@@ -1,0 +1,33 @@
+{
+    "name": "three-shadowContact",
+    "version": "0.125.210205",
+    "license": "MIT",
+    "description": "domevents for three.js",
+    "author": "i3ernie",
+    "repository": "https://github.com/i3ernie/three-volumentricspotlight",
+    "dependencies": {
+        "three": "^0.123"
+    },
+    "devDependencies": {
+        "@rollup/plugin-replace": "latest",
+        "async": "latest",
+        "dat.gui": "latest",
+        "gulp": "latest",
+        "rollup-plugin-buble": "latest",
+        "rollup-plugin-node-resolve": "latest",
+        "gulp-rollup": "latest",
+        "rollup": "latest",
+        "three-viewport": "git+https://github.com/i3ernie/three-viewport.git"
+    },
+    "directories": {
+        "example": "examples",
+        "dist": "dist"
+    },
+    "files": [
+        "LICENSE",
+        "README.md",
+        "dist/shadow_contact.module.js",
+        "dist/shadow_contact.amd.js",
+        "package.json"
+    ]
+}
