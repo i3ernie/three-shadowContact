@@ -3,285 +3,155 @@ import * as THREE from '../node_modules/three/build/three.module.js';
 import { HorizontalBlurShader } from '../node_modules/three/examples/jsm/shaders/HorizontalBlurShader.js';
 import { VerticalBlurShader } from '../node_modules/three/examples/jsm/shaders/VerticalBlurShader.js';
 
-			let camera, scene, renderer, stats, gui;
+const PLANE_WIDTH = 2.5;
+const PLANE_HEIGHT = 2.5;
+const CAMERA_HEIGHT = 0.3;
+
+const defaults = {
+	
+		blur: 3.5,
+		darkness: 1,
+		opacity: 1,
+	
+};
+
+const ContactShadow = function( VP, opts ) {
+	this.VP = VP;
+	this.options = Object.assign({}, defaults, opts);
 
-			const meshes = [];
+	let shadowGroup, renderTarget, renderTargetBlur, shadowCamera, horizontalBlurMaterial, verticalBlurMaterial;
+
+	let blurPlane;
 
-			const PLANE_WIDTH = 2.5;
-			const PLANE_HEIGHT = 2.5;
-			const CAMERA_HEIGHT = 0.3;
+	// the render target that will show the shadows in the plane texture
+	renderTarget = new THREE.WebGLRenderTarget( 512, 512 );
+	renderTarget.texture.generateMipmaps = false;
 
-			const state = {
-				shadow: {
-					blur: 3.5,
-					darkness: 1,
-					opacity: 1,
-				},
-				plane: {
-					color: '#ffffff',
-					opacity: 1,
-				},
-				showWireframe: false,
-			};
+	// the render target that we will use to blur the first render target
+	renderTargetBlur = new THREE.WebGLRenderTarget( 512, 512 );
+	renderTargetBlur.texture.generateMipmaps = false;
+		
 
-			let shadowGroup, renderTarget, renderTargetBlur, shadowCamera, cameraHelper, depthMaterial, horizontalBlurMaterial, verticalBlurMaterial;
+	function blurShadow( amount ) {
 
-			let plane, blurPlane, fillPlane;
+		blurPlane.visible = true;
 
-			init();
-			animate();
+		// blur horizontally and draw in the renderTargetBlur
+		blurPlane.material = horizontalBlurMaterial;
+		blurPlane.material.uniforms.tDiffuse.value = renderTarget.texture;
+		horizontalBlurMaterial.uniforms.h.value = amount * 1 / 256;
 
-			function init() {
-
-				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
-				camera.position.set( 0.5, 1, 2 );
-
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xffffff );
-
-				stats = new Stats();
-				document.body.appendChild( stats.dom );
-
-				window.addEventListener( 'resize', onWindowResize );
+		VP.renderer.setRenderTarget( renderTargetBlur );
+		VP.renderer.render( blurPlane, shadowCamera );
 
-				// add the example meshes
+		// blur vertically and draw in the main renderTarget
+		blurPlane.material = verticalBlurMaterial;
+		blurPlane.material.uniforms.tDiffuse.value = renderTargetBlur.texture;
+		verticalBlurMaterial.uniforms.v.value = amount * 1 / 256;
 
-				const geometries = [
-					new THREE.BoxGeometry( 0.4, 0.4, 0.4 ),
-					new THREE.IcosahedronGeometry( 0.3 ),
-					new THREE.TorusKnotGeometry( 0.4, 0.05, 256, 24, 1, 3 )
-				];
+		VP.renderer.setRenderTarget( renderTarget );
+		VP.renderer.render( blurPlane, shadowCamera );
 
-				const material = new THREE.MeshNormalMaterial();
+		blurPlane.visible = false;
+	}
 
-				for ( let i = 0, l = geometries.length; i < l; i ++ ) {
+	this.makeShadow = function( plane ){
 
-					const angle = ( i / l ) * Math.PI * 2;
+		const planeMaterial = new THREE.MeshBasicMaterial( {
+			map: renderTarget.texture,
+			opacity: this.options.opacity,
+			transparent: true,
+			depthWrite: false,
+		});
 
-					const geometry = geometries[ i ];
-					const mesh = new THREE.Mesh( geometry, material );
-					mesh.position.y = 0.1;
-					mesh.position.x = Math.cos( angle ) / 2.0;
-					mesh.position.z = Math.sin( angle ) / 2.0;
-					scene.add( mesh );
-					meshes.push( mesh );
+		const scope = this;
 
-				}
+		shadowGroup = new THREE.Group();
 
+		let geo = plane.geometry;
 
+		this.plane = new THREE.Mesh( geo, planeMaterial );
+		// make sure it's rendered after the fillPlane
+		this.plane.renderOrder = 1;
+		shadowGroup.add( this.plane );
 
-				// the container, if you need to move the plane just move this
-				shadowGroup = new THREE.Group();
-				shadowGroup.position.y = - 0.3;
-				scene.add( shadowGroup );
+		// the y from the texture is flipped!
+		this.plane.scale.y = - 1;
 
-				// the render target that will show the shadows in the plane texture
-				renderTarget = new THREE.WebGLRenderTarget( 512, 512 );
-				renderTarget.texture.generateMipmaps = false;
+		// the plane onto which to blur the texture
+		blurPlane = new THREE.Mesh( geo );
+		blurPlane.visible = false;
+		shadowGroup.add( blurPlane );
+				
+	
+		// the camera to render the depth material from
+		shadowCamera = new THREE.OrthographicCamera( - PLANE_WIDTH / 2, PLANE_WIDTH / 2, PLANE_HEIGHT / 2, - PLANE_HEIGHT / 2, 0, CAMERA_HEIGHT );
+		shadowCamera.rotation.x = Math.PI / 2; // get the camera to look up
+		shadowGroup.add( shadowCamera );
 
-				// the render target that we will use to blur the first render target
-				renderTargetBlur = new THREE.WebGLRenderTarget( 512, 512 );
-				renderTargetBlur.texture.generateMipmaps = false;
+		this.cameraHelper = new THREE.CameraHelper( shadowCamera );
 
+		// like MeshDepthMaterial, but goes from black to transparent
+		this.depthMaterial = new THREE.MeshDepthMaterial();
+		this.depthMaterial.userData.darkness = { value: this.options.darkness };
+		this.depthMaterial.onBeforeCompile = function ( shader ) {
 
-				// make a plane and make it face up
-				const planeGeometry = new THREE.PlaneGeometry( PLANE_WIDTH, PLANE_HEIGHT ).rotateX( Math.PI / 2 );
-				const planeMaterial = new THREE.MeshBasicMaterial( {
-					map: renderTarget.texture,
-					opacity: state.shadow.opacity,
-					transparent: true,
-					depthWrite: false,
-				} );
-				plane = new THREE.Mesh( planeGeometry, planeMaterial );
-				// make sure it's rendered after the fillPlane
-				plane.renderOrder = 1;
-				shadowGroup.add( plane );
+			shader.uniforms.darkness = scope.depthMaterial.userData.darkness;
+			shader.fragmentShader = /* glsl */`
+				uniform float darkness;
+				${shader.fragmentShader.replace(
+			'gl_FragColor = vec4( vec3( 1.0 - fragCoordZ ), opacity );',
+			'gl_FragColor = vec4( vec3( 0.0 ), ( 1.0 - fragCoordZ ) * darkness );'
+		)}
+			`;
 
-				// the y from the texture is flipped!
-				plane.scale.y = - 1;
+		};
+	
+		this.depthMaterial.depthTest = false;
+		this.depthMaterial.depthWrite = false;
 
-				// the plane onto which to blur the texture
-				blurPlane = new THREE.Mesh( planeGeometry );
-				blurPlane.visible = false;
-				shadowGroup.add( blurPlane );
+		horizontalBlurMaterial = new THREE.ShaderMaterial( HorizontalBlurShader );
+		horizontalBlurMaterial.depthTest = false;
 
-				// the plane with the color of the ground
-				const fillPlaneMaterial = new THREE.MeshBasicMaterial( {
-					color: state.plane.color,
-					opacity: state.plane.opacity,
-					transparent: true,
-					depthWrite: false,
-				} );
-				fillPlane = new THREE.Mesh( planeGeometry, fillPlaneMaterial );
-				fillPlane.rotateX( Math.PI );
-				shadowGroup.add( fillPlane );
+		verticalBlurMaterial = new THREE.ShaderMaterial( VerticalBlurShader );
+		verticalBlurMaterial.depthTest = false;
 
-				// the camera to render the depth material from
-				shadowCamera = new THREE.OrthographicCamera( - PLANE_WIDTH / 2, PLANE_WIDTH / 2, PLANE_HEIGHT / 2, - PLANE_HEIGHT / 2, 0, CAMERA_HEIGHT );
-				shadowCamera.rotation.x = Math.PI / 2; // get the camera to look up
-				shadowGroup.add( shadowCamera );
+		VP.loop.add( this.renderLoop.bind(this) );
 
-				cameraHelper = new THREE.CameraHelper( shadowCamera );
+		return shadowGroup;
+	};
 
-				// like MeshDepthMaterial, but goes from black to transparent
-				depthMaterial = new THREE.MeshDepthMaterial();
-				depthMaterial.userData.darkness = { value: state.shadow.darkness };
-				depthMaterial.onBeforeCompile = function ( shader ) {
+	this.renderLoop = function( delta, now ) {
 
-					shader.uniforms.darkness = depthMaterial.userData.darkness;
-					shader.fragmentShader = /* glsl */`
-						uniform float darkness;
-						${shader.fragmentShader.replace(
-					'gl_FragColor = vec4( vec3( 1.0 - fragCoordZ ), opacity );',
-					'gl_FragColor = vec4( vec3( 0.0 ), ( 1.0 - fragCoordZ ) * darkness );'
-				)}
-					`;
+		// remove the background
+		const initialBackground = this.VP.scene.background;
+		this.VP.scene.background = null;
 
-				};
+		// force the depthMaterial to everything
+		this.cameraHelper.visible = false;
+		this.VP.scene.overrideMaterial = this.depthMaterial;
 
-				depthMaterial.depthTest = false;
-				depthMaterial.depthWrite = false;
+		// render to the render target to get the depths
+		this.VP.renderer.setRenderTarget( renderTarget );
+		this.VP.renderer.render( this.VP.scene, shadowCamera );
 
-				horizontalBlurMaterial = new THREE.ShaderMaterial( HorizontalBlurShader );
-				horizontalBlurMaterial.depthTest = false;
+		// and reset the override material
+		this.VP.scene.overrideMaterial = null;
+		this.cameraHelper.visible = true;
 
-				verticalBlurMaterial = new THREE.ShaderMaterial( VerticalBlurShader );
-				verticalBlurMaterial.depthTest = false;
+		blurShadow( this.options.blur );
 
-				//
+		// a second pass to reduce the artifacts
+		// (0.4 is the minimum blur amout so that the artifacts are gone)
+		blurShadow( this.options.blur * 0.4 );
 
-				gui = new GUI();
-				const shadowFolder = gui.addFolder( 'shadow' );
-				shadowFolder.open();
-				const planeFolder = gui.addFolder( 'plane' );
-				planeFolder.open();
+		// reset and render the normal scene
+		this.VP.renderer.setRenderTarget( null );
+		this.VP.scene.background = initialBackground;
 
+	};
 
-				shadowFolder.add( state.shadow, 'blur', 0, 15, 0.1 );
-				shadowFolder.add( state.shadow, 'darkness', 1, 5, 0.1 ).onChange( function () {
+}
 
-					depthMaterial.userData.darkness.value = state.shadow.darkness;
 
-				} );
-				shadowFolder.add( state.shadow, 'opacity', 0, 1, 0.01 ).onChange( function () {
-
-					plane.material.opacity = state.shadow.opacity;
-
-				} );
-				planeFolder.addColor( state.plane, 'color' ).onChange( function () {
-
-					fillPlane.material.color = new THREE.Color( state.plane.color );
-
-				} );
-				planeFolder.add( state.plane, 'opacity', 0, 1, 0.01 ).onChange( function () {
-
-					fillPlane.material.opacity = state.plane.opacity;
-
-				} );
-
-				gui.add( state, 'showWireframe', true ).onChange( function () {
-
-					if ( state.showWireframe ) {
-
-						scene.add( cameraHelper );
-
-					} else {
-
-						scene.remove( cameraHelper );
-
-					}
-
-				} );
-
-				//
-
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
-
-				//
-
-				new OrbitControls( camera, renderer.domElement );
-
-			}
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			// renderTarget --> blurPlane (horizontalBlur) --> renderTargetBlur --> blurPlane (verticalBlur) --> renderTarget
-			function blurShadow( amount ) {
-
-				blurPlane.visible = true;
-
-				// blur horizontally and draw in the renderTargetBlur
-				blurPlane.material = horizontalBlurMaterial;
-				blurPlane.material.uniforms.tDiffuse.value = renderTarget.texture;
-				horizontalBlurMaterial.uniforms.h.value = amount * 1 / 256;
-
-				renderer.setRenderTarget( renderTargetBlur );
-				renderer.render( blurPlane, shadowCamera );
-
-				// blur vertically and draw in the main renderTarget
-				blurPlane.material = verticalBlurMaterial;
-				blurPlane.material.uniforms.tDiffuse.value = renderTargetBlur.texture;
-				verticalBlurMaterial.uniforms.v.value = amount * 1 / 256;
-
-				renderer.setRenderTarget( renderTarget );
-				renderer.render( blurPlane, shadowCamera );
-
-				blurPlane.visible = false;
-
-			}
-
-			function animate( ) {
-
-				requestAnimationFrame( animate );
-
-				//
-
-				meshes.forEach( mesh => {
-
-					mesh.rotation.x += 0.01;
-					mesh.rotation.y += 0.02;
-
-				} );
-
-				//
-
-				// remove the background
-				const initialBackground = scene.background;
-				scene.background = null;
-
-				// force the depthMaterial to everything
-				cameraHelper.visible = false;
-				scene.overrideMaterial = depthMaterial;
-
-				// render to the render target to get the depths
-				renderer.setRenderTarget( renderTarget );
-				renderer.render( scene, shadowCamera );
-
-				// and reset the override material
-				scene.overrideMaterial = null;
-				cameraHelper.visible = true;
-
-				blurShadow( state.shadow.blur );
-
-				// a second pass to reduce the artifacts
-				// (0.4 is the minimum blur amout so that the artifacts are gone)
-				blurShadow( state.shadow.blur * 0.4 );
-
-				// reset and render the normal scene
-				renderer.setRenderTarget( null );
-				scene.background = initialBackground;
-
-				renderer.render( scene, camera );
-				stats.update();
-
-			}
+export default ContactShadow;
