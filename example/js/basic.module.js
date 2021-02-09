@@ -3,7 +3,7 @@ import * as THREE from '../../node_modules/three/build/three.module.js';
 import Stats from '../../node_modules/three/examples/jsm/libs/stats.module.js';
 
 import addShadowcontactDatGui from "../../src/datgui.shadowcontact.module.js";
-import ContactShadow from '../../src/shadow_contact.module.js'
+import ContactShadow from '../../dist/shadow_contact.module.js'
 
 import Viewport from "../../node_modules/three-viewport/dist/viewport.es.js";
 import getBasicObjects from './basicObjects.module.js';
