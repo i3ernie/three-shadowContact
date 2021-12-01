@@ -6,7 +6,7 @@
     "author": "i3ernie",
     "repository": "https://github.com/i3ernie/three-volumentricspotlight",
     "dependencies": {
-        "three": "^0.123"
+        "three": "^0.135"
     },
     "devDependencies": {
         "@rollup/plugin-replace": "latest",
