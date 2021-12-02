@@ -1,11 +1,11 @@
-import * as THREE from '../../node_modules/three/build/three.module.js';
+import * as THREE from './vendor/three.module.js';
 
-import Stats from '../../node_modules/three/examples/jsm/libs/stats.module.js';
+import Stats from './vendor/stats.module.js';
 
 import addShadowcontactDatGui from "../../src/datgui.shadowcontact.module.js";
-import ContactShadow from '../../dist/shadow_contact.module.js'
+import ContactShadow from './shadow_contact.module.js'
 
-import Viewport from "../../node_modules/three-viewport/dist/viewport.es.js";
+import Viewport from "./vendor/viewport.es.js";
 import getBasicObjects from './basicObjects.module.js';
 
 
