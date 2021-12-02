@@ -2,7 +2,7 @@ import * as THREE from './vendor/three.module.js';
 
 import Stats from './vendor/stats.module.js';
 
-import addShadowcontactDatGui from "../../src/datgui.shadowcontact.module.js";
+import addShadowcontactDatGui from "./datgui.shadowcontact.module.js";
 import ContactShadow from './shadow_contact.module.js'
 
 import Viewport from "./vendor/viewport.es.js";
