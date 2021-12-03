@@ -54,15 +54,20 @@ ContactShadow.prototype.blurShadow = function( amount ) {
 
 ContactShadow.prototype.makeShadow = function( plane, opts ){
 
-	const planeMaterial = new THREE.MeshBasicMaterial( {
+	const planeMaterial = new THREE.MeshStandardMaterial( {
 		map: this.renderTarget.texture,
+		color : "#ffffff",
+		lightMap : this.renderTarget.texture,
+		lightMapIntensity :2,
 		opacity: this.options.opacity,
 		transparent: true,
 		depthWrite: false,
 	});
 
+	//plane.material.lightMap = this.renderTarget.texture;
+
 	const scope = this;
-	
+	console.log(plane.material);
 
 	plane.addEventListener("removed", function(){
 		scope.VP.loop.remove( scope.boundRenderLoop );

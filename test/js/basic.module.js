@@ -43,6 +43,12 @@ const defaults = {
 			
 				VP.scene.background = new THREE.Color( 0xffffff );
 
+				// add a light in front
+				let light	= new THREE.DirectionalLight('white', 1);
+				light.position.set(10, 10, 30);
+				light.castShadow = true;
+				VP.scene.add( light );
+
 				stats = new Stats();
 				document.body.appendChild( stats.dom );
 
@@ -57,7 +63,7 @@ const defaults = {
 				// the plane with the color of the ground
 				fillPlane = new THREE.Mesh( 
 					new THREE.PlaneGeometry( PLANE_WIDTH, PLANE_HEIGHT ).rotateX( Math.PI / 2 ), 
-					new THREE.MeshBasicMaterial( {
+					new THREE.MeshStandardMaterial( {
 						color: state.plane.color,
 						opacity: state.plane.opacity,
 						transparent: true,
