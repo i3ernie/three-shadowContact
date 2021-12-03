@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, MeshBasicMaterial, Group, Mesh, OrthographicCamera, CameraHelper, MeshDepthMaterial, ShaderMaterial } from './vendor/three.module.js';
+import * as THREE from './vendor/three.module.js';
 
 /**
  * Two pass Gaussian blur filter (horizontal and vertical blur shaders)
@@ -14,50 +14,14 @@ var HorizontalBlurShader = {
 
 	uniforms: {
 
-		"tDiffuse": { value: null },
-		"h": { value: 1.0 / 512.0 }
+		'tDiffuse': { value: null },
+		'h': { value: 1.0 / 512.0 }
 
 	},
 
-	vertexShader: [
+	vertexShader: /* glsl */"\n\n\t\tvarying vec2 vUv;\n\n\t\tvoid main() {\n\n\t\t\tvUv = uv;\n\t\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\n\t\t}",
 
-		"varying vec2 vUv;",
-
-		"void main() {",
-
-		"	vUv = uv;",
-		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
-
-		"}"
-
-	].join( "\n" ),
-
-	fragmentShader: [
-
-		"uniform sampler2D tDiffuse;",
-		"uniform float h;",
-
-		"varying vec2 vUv;",
-
-		"void main() {",
-
-		"	vec4 sum = vec4( 0.0 );",
-
-		"	sum += texture2D( tDiffuse, vec2( vUv.x - 4.0 * h, vUv.y ) ) * 0.051;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x - 3.0 * h, vUv.y ) ) * 0.0918;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x - 2.0 * h, vUv.y ) ) * 0.12245;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x - 1.0 * h, vUv.y ) ) * 0.1531;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x + 1.0 * h, vUv.y ) ) * 0.1531;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x + 2.0 * h, vUv.y ) ) * 0.12245;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x + 3.0 * h, vUv.y ) ) * 0.0918;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x + 4.0 * h, vUv.y ) ) * 0.051;",
-
-		"	gl_FragColor = sum;",
-
-		"}"
-
-	].join( "\n" )
+	fragmentShader: /* glsl */"\n\n\t\tuniform sampler2D tDiffuse;\n\t\tuniform float h;\n\n\t\tvarying vec2 vUv;\n\n\t\tvoid main() {\n\n\t\t\tvec4 sum = vec4( 0.0 );\n\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x - 4.0 * h, vUv.y ) ) * 0.051;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x - 3.0 * h, vUv.y ) ) * 0.0918;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x - 2.0 * h, vUv.y ) ) * 0.12245;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x - 1.0 * h, vUv.y ) ) * 0.1531;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x + 1.0 * h, vUv.y ) ) * 0.1531;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x + 2.0 * h, vUv.y ) ) * 0.12245;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x + 3.0 * h, vUv.y ) ) * 0.0918;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x + 4.0 * h, vUv.y ) ) * 0.051;\n\n\t\t\tgl_FragColor = sum;\n\n\t\t}"
 
 };
 
@@ -71,54 +35,18 @@ var HorizontalBlurShader = {
  * - "h" and "v" parameters should be set to "1 / width" and "1 / height"
  */
 
-var VerticalBlurShader = {
+const VerticalBlurShader = {
 
 	uniforms: {
 
-		"tDiffuse": { value: null },
-		"v": { value: 1.0 / 512.0 }
+		'tDiffuse': { value: null },
+		'v': { value: 1.0 / 512.0 }
 
 	},
 
-	vertexShader: [
+	vertexShader: /* glsl */"\n\n\t\tvarying vec2 vUv;\n\n\t\tvoid main() {\n\n\t\t\tvUv = uv;\n\t\t\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\n\t\t}",
 
-		"varying vec2 vUv;",
-
-		"void main() {",
-
-		"	vUv = uv;",
-		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
-
-		"}"
-
-	].join( "\n" ),
-
-	fragmentShader: [
-
-		"uniform sampler2D tDiffuse;",
-		"uniform float v;",
-
-		"varying vec2 vUv;",
-
-		"void main() {",
-
-		"	vec4 sum = vec4( 0.0 );",
-
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 4.0 * v ) ) * 0.051;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 3.0 * v ) ) * 0.0918;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 2.0 * v ) ) * 0.12245;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 1.0 * v ) ) * 0.1531;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 1.0 * v ) ) * 0.1531;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 2.0 * v ) ) * 0.12245;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 3.0 * v ) ) * 0.0918;",
-		"	sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 4.0 * v ) ) * 0.051;",
-
-		"	gl_FragColor = sum;",
-
-		"}"
-
-	].join( "\n" )
+	fragmentShader: /* glsl */"\n\n\t\tuniform sampler2D tDiffuse;\n\t\tuniform float v;\n\n\t\tvarying vec2 vUv;\n\n\t\tvoid main() {\n\n\t\t\tvec4 sum = vec4( 0.0 );\n\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 4.0 * v ) ) * 0.051;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 3.0 * v ) ) * 0.0918;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 2.0 * v ) ) * 0.12245;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y - 1.0 * v ) ) * 0.1531;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 1.0 * v ) ) * 0.1531;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 2.0 * v ) ) * 0.12245;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 3.0 * v ) ) * 0.0918;\n\t\t\tsum += texture2D( tDiffuse, vec2( vUv.x, vUv.y + 4.0 * v ) ) * 0.051;\n\n\t\t\tgl_FragColor = sum;\n\n\t\t}"
 
 };
 
@@ -137,11 +65,11 @@ const ContactShadow = function( VP, opts ) {
 	this.list = [];
 
 	// the render target that will show the shadows in the plane texture
-	this.renderTarget = new WebGLRenderTarget( 512, 512 );
+	this.renderTarget = new THREE.WebGLRenderTarget( 512, 512 );
 	this.renderTarget.texture.generateMipmaps = false;
 
 	// the render target that we will use to blur the first render target
-	this.renderTargetBlur = new WebGLRenderTarget( 512, 512 );
+	this.renderTargetBlur = new THREE.WebGLRenderTarget( 512, 512 );
 	this.renderTargetBlur.texture.generateMipmaps = false;
 
 	this.boundRenderLoop = this.renderLoop.bind(this); 
@@ -173,7 +101,7 @@ ContactShadow.prototype.blurShadow = function( amount ) {
 
 ContactShadow.prototype.makeShadow = function( plane, opts ){
 
-	const planeMaterial = new MeshBasicMaterial( {
+	const planeMaterial = new THREE.MeshBasicMaterial( {
 		map: this.renderTarget.texture,
 		opacity: this.options.opacity,
 		transparent: true,
@@ -191,7 +119,7 @@ ContactShadow.prototype.makeShadow = function( plane, opts ){
 		scope.VP.loop.add( scope.boundRenderLoop );
 	});
 
-	let shadowGroup = new Group();
+	let shadowGroup = new THREE.Group();
 	shadowGroup.rotateX( -Math.PI );
 
 	let geo = plane.geometry;
@@ -202,7 +130,7 @@ ContactShadow.prototype.makeShadow = function( plane, opts ){
 		height : geo.boundingBox.max.z - geo.boundingBox.min.z 
 	};
 
-	this.plane = new Mesh( geo, planeMaterial );
+	this.plane = new THREE.Mesh( geo, planeMaterial );
 	// make sure it's rendered after the fillPlane
 	this.plane.renderOrder = 1;
 	shadowGroup.add( this.plane );
@@ -212,20 +140,20 @@ ContactShadow.prototype.makeShadow = function( plane, opts ){
 
 
 	// the plane onto which to blur the texture
-	this.blurPlane = new Mesh( geo );
+	this.blurPlane = new THREE.Mesh( geo );
 	this.blurPlane.visible = false;
 	shadowGroup.add( this.blurPlane );
 			
 
 	// the camera to render the depth material from
-	this.shadowCamera = new OrthographicCamera( - size.width / 2, size.width / 2, size.height / 2, - size.height / 2, 0, this.options.camera_height );
+	this.shadowCamera = new THREE.OrthographicCamera( - size.width / 2, size.width / 2, size.height / 2, - size.height / 2, 0, this.options.camera_height );
 	this.shadowCamera.rotation.x = Math.PI / 2; // get the camera to look up
 	shadowGroup.add( this.shadowCamera );
 
-	this.cameraHelper = new CameraHelper( this.shadowCamera );
+	this.cameraHelper = new THREE.CameraHelper( this.shadowCamera );
 
 	// like MeshDepthMaterial, but goes from black to transparent
-	this.depthMaterial = new MeshDepthMaterial();
+	this.depthMaterial = new THREE.MeshDepthMaterial();
 	this.depthMaterial.userData.darkness = { value: this.options.darkness };
 	this.depthMaterial.onBeforeCompile = function ( shader ) {
 
@@ -240,10 +168,10 @@ ContactShadow.prototype.makeShadow = function( plane, opts ){
 	this.depthMaterial.depthTest = false;
 	this.depthMaterial.depthWrite = false;
 
-	this.horizontalBlurMaterial = new ShaderMaterial( HorizontalBlurShader );
+	this.horizontalBlurMaterial = new THREE.ShaderMaterial( HorizontalBlurShader );
 	this.horizontalBlurMaterial.depthTest = false;
 
-	this.verticalBlurMaterial = new ShaderMaterial( VerticalBlurShader );
+	this.verticalBlurMaterial = new THREE.ShaderMaterial( VerticalBlurShader );
 	this.verticalBlurMaterial.depthTest = false;
 
 	plane.add( shadowGroup );
@@ -286,5 +214,5 @@ ContactShadow.make = function( VP, plane, opts ){
 	return cs;
 };
 
-export default ContactShadow;
+export { ContactShadow as default };
 //# sourceMappingURL=shadow_contact.module.js.map
