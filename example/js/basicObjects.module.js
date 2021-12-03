@@ -20,6 +20,8 @@ const getBasicObjects = function(){
         mesh.position.y = 0.1;
         mesh.position.x = Math.cos( angle ) / 2.0;
         mesh.position.z = Math.sin( angle ) / 2.0;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         
         meshes.push( mesh );
     }
