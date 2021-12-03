@@ -9,6 +9,7 @@ const gulp = require('gulp');
 
 const build_AMD = require("./build/build_amd");
 const build_module = require("./build/build_es");
+const build_example = require("./build/build_example");
 
 var pkg = require('./package.json');
 
@@ -30,6 +31,7 @@ gulp.task("build", ( done ) => {
 
 gulp.task("buildAMD", build_AMD );
 gulp.task("buildModule", build_module);
+gulp.task("buildExample", build_example);
 
 
 gulp.task('default', gulp.series('init', 'buildAMD', 'buildModule') );
