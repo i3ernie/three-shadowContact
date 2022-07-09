@@ -1,29 +1,50 @@
-## Welcome to GitHub Pages
+three-shadowContact.js
+========
+
+#### JavaScript 3D library for three.js ####
 
 You can use the [editor on GitHub](https://github.com/i3ernie/three-shadowContact/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
-### Markdown
+### Usage ###
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
-```markdown
-Syntax highlighted code block
+```javascript
+import * as THREE from 'three';
+import ContactShadow from 'shadow_contact.module'
 
-# Header 1
-## Header 2
-### Header 3
+// init
 
-- Bulleted
-- List
+const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
+camera.position.z = 1;
 
-1. Numbered
-2. List
+const scene = new THREE.Scene();
 
-**Bold** and _Italic_ and `Code` text
+const geometry = new THREE.BoxGeometry( 0.2, 0.2, 0.2 );
+const material = new THREE.MeshNormalMaterial();
 
-[Link](url) and ![Image](src)
+const mesh = new THREE.Mesh( geometry, material );
+scene.add( mesh );
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setAnimationLoop( animation );
+document.body.appendChild( renderer.domElement );
+
+cs = ContactShadow.make( VP, fillPlane, state.shadow );
+
+// animation
+
+function animation( time ) {
+
+	mesh.rotation.x = time / 2000;
+	mesh.rotation.y = time / 1000;
+
+	renderer.render( scene, camera );
+
+}
 ```
 
 For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
