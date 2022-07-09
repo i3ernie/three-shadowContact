@@ -1,12 +1,12 @@
 {
     "name": "three-shadowContact",
-    "version": "0.125.210205",
+    "version": "0.142.220707",
     "license": "MIT",
-    "description": "domevents for three.js",
+    "description": "blur like shadow for three.js",
     "author": "i3ernie",
     "repository": "https://github.com/i3ernie/three-volumentricspotlight",
     "dependencies": {
-        "three": "^0.135"
+        "three": "^0.142"
     },
     "devDependencies": {
         "@rollup/plugin-replace": "latest",
