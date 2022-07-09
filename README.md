@@ -30,8 +30,8 @@ For more details see [Basic writing and formatting syntax](https://docs.github.c
 
 ### Examples
 
-Basic [example/basic.html](https://github.com/i3ernie/three-shadowContact/example/basic.html). 
-Basic texture [example/basic-texture.html](https://github.com/i3ernie/three-shadowContact/example/basic-texture.html).
+- Basic [example/basic.html](https://i3ernie.github.io/three-shadowContact/example/basic.html). 
+- Basic texture [example/basic-texture.html](https://i3ernie.github.io/three-shadowContact/example/basic-texture.html).
 
 ### Support or Contact
 
