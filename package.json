@@ -13,7 +13,6 @@
         "async": "latest",
         "dat.gui": "latest",
         "gulp": "latest",
-        "rollup-plugin-buble": "latest",
         "rollup-plugin-node-resolve": "latest",
         "gulp-rollup": "latest",
         "rollup": "latest",

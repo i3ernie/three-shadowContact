@@ -1,14 +1,7 @@
 const rollup  = require('rollup');
 const resolve =require('rollup-plugin-node-resolve');
-const buble = require('rollup-plugin-buble');
 const replace = require("./replace.js");
 const async = require("async");
-
-const transforms = {
-    arrow: false,
-    classes: true,
-    letConst : false
-};
 
 
 
@@ -20,11 +13,7 @@ const build_AMD = function( done ){
         
         plugins:[
 
-            resolve(),
-            
-            buble({
-				transforms: transforms
-			})
+            resolve()
         ]
     }).then(( bundle ) => { 
         bundle.write({
